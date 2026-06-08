@@ -46,7 +46,7 @@ def load_data():
     # ✅ 更新：使用包含商场数据的最终数据集
     #df = pd.read_csv("../data/processed/hdb_data_with_bus_and_mall.csv", low_memory=False)
     #df = pd.read_csv("../data/processed/hdb_data_final_small.csv", low_memory=False)
-    df = pd.read_parquet("../data/processed/hdb_data_final_small.parquet")
+    df = pd.read_parquet("/data/processed/hdb_data_final_small.parquet")
 
     # 预处理（与训练代码完全一致）
     #df['month'] = pd.to_datetime(df['month'])
@@ -82,7 +82,7 @@ def load_data():
 @st.cache_resource(show_spinner="正在加载模型...")
 def load_model():
     # LightGBM官方推荐的加载方式
-    model = lgb.Booster(model_file='../models/hdb_price_prediction_model.txt')
+    model = lgb.Booster(model_file='/models/hdb_price_prediction_model.txt')
     return model
 
 
@@ -731,7 +731,7 @@ elif page == "🔍 房源筛选与地图":
         # 地铁站图层
         try:
             mrt_data, lat_col, lon_col, name_col = load_geospatial_data(
-                "../data/processed/mrt_stations_clean.csv",
+                "/data/processed/mrt_stations_clean.csv",
                 ['NAME', 'mrt_name', 'name', 'station_name', 'station'],
                 "地铁站出入口"
             )
@@ -752,7 +752,7 @@ elif page == "🔍 房源筛选与地图":
         # 公交站图层
         try:
             bus_data, lat_col, lon_col, name_col = load_geospatial_data(
-                "../data/processed/bus_stops_clean.csv",
+                "/data/processed/bus_stops_clean.csv",
                 ['bus_stop_name', 'name', 'description', 'bus_stop_code'],
                 "公交站"
             )
@@ -777,7 +777,7 @@ elif page == "🔍 房源筛选与地图":
         # 小学图层
         try:
             school_data, lat_col, lon_col, name_col = load_geospatial_data(
-                "../data/processed/primary_schools_clean.csv",
+                "/data/processed/primary_schools_clean.csv",
                 ['school_name', 'name', 'primary_school', 'school'],
                 "小学"
             )
@@ -798,7 +798,7 @@ elif page == "🔍 房源筛选与地图":
         # 公园图层
         try:
             park_data, lat_col, lon_col, name_col = load_geospatial_data(
-                "../data/processed/parks_clean.csv",
+                "/data/processed/parks_clean.csv",
                 ['park_name', 'name', 'park'],
                 "公园"
             )
@@ -819,7 +819,7 @@ elif page == "🔍 房源筛选与地图":
         # ✅ 新增：商场图层
         try:
             mall_data, lat_col, lon_col, name_col = load_geospatial_data(
-                "../data/processed/malls_clean.csv",
+                "/data/processed/malls_clean.csv",
                 ['mall_name', 'name', 'shopping_mall'],
                 "商场"
             )
