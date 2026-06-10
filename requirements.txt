@@ -6,29 +6,29 @@ streamlit_folium==0.27.2
 
 # 机器学习模型
 lightgbm==4.6.0
-scikit-learn==1.4.0  # 修正了包名拼写
+scikit-learn==1.4.0
 scipy==1.11.4
 
 # 数据可视化
-matplotlib==3.9.0  # 升级到支持numpy 1.26的版本
+matplotlib==3.9.0
 plotly==5.18.0
 seaborn==0.13.2
 
 # 数据处理
-numpy==1.26.4  # 降级到与所有包兼容的稳定版本
-pandas==2.2.2  # 降级到与numpy 1.26兼容的版本
+numpy==1.26.4
+pandas==2.2.2
 
-# 地理数据处理
-pyproj==3.8.0  # 升级到支持Python 3.14的版本
+# 地理数据处理（使用最新正式发布版本）
+pyproj==3.7.2
 
 # 网络请求
-requests==2.34.2  # 修正了大小写（全小写）
+requests==2.34.2
 
 # Streamlit核心框架
-streamlit==1.35.0  # 降级到最稳定的版本，避免兼容性问题
+streamlit==1.35.0
 
 # 模型保存与加载
 joblib==1.4.2
 
-# Parquet格式支持（如果你转换了数据集）
+# Parquet格式支持
 pyarrow==16.1.0
