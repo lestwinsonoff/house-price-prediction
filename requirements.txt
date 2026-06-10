@@ -35,3 +35,5 @@ joblib==1.4.2
 pip==24.0  # 不要用最新的26.x，避免uv解析冲突
 setuptools==69.5.1
 wheel==0.43.0
+
+statsmodels==0.14.2
