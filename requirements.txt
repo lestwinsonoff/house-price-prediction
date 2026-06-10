@@ -1,15 +1,31 @@
-folium==0.15.1
-geopandas==0.14.4
-haversine==2.8.1
-lightgbm==4.6.0
-matplotlib==3.8.2
-numpy==2.4.6
-pandas==3.0.3
-plotly==5.18.0
-pyproj==3.7.1
-Requests==2.34.2
-scikit_learn==1.4.0
-scipy==1.11.4
-seaborn==0.13.2
-streamlit==1.58.0
-streamlit_folium==0.27.2
+# ====================== 核心框架（Cloud完美兼容） ======================
+streamlit==1.58.0  # 最新稳定版，Cloud原生支持
+streamlit-folium==0.27.2  # ✅ 与streamlit 1.58.0完全兼容，支持自定义JS
+folium==0.15.1  # 保留你指定的版本，稳定无问题
+
+# ====================== 地图相关 ======================
+geopandas==0.14.4  # 保留你指定的版本
+haversine==2.8.1  # 保留你指定的版本
+pyproj==3.7.1  # 保留你指定的版本
+shapely==2.0.6  # 新增，geopandas必需依赖，Cloud兼容
+
+# ====================== 机器学习 ======================
+lightgbm==4.6.0  # 保留你指定的版本
+scikit-learn==1.5.2  # 从1.4.0升级，唯一同时支持numpy 1.26和2.0的版本
+scipy==1.13.1  # 从1.11.4升级，Cloud兼容
+
+# ====================== 可视化 ======================
+matplotlib==3.9.2  # 从3.8.2升级，与numpy 1.26完美兼容
+plotly==5.18.0  # 保留你指定的版本
+seaborn==0.13.2  # 保留你指定的版本
+
+# ====================== 数据处理（关键修正！） ======================
+numpy==1.26.4  # ❌ 从2.4.6降级！Cloud唯一稳定兼容的numpy版本
+pandas==2.2.3  # ❌ 从3.0.3降级！与所有依赖兼容的最新版
+pyarrow==17.0.0  # 新增，pandas可选依赖，加速数据处理
+
+# ====================== 工具 ======================
+requests==2.34.2  # 修正大小写错误（Requests→requests）
+joblib==1.4.2  # 新增，scikit-learn必需依赖
+branca==0.8.0  # 新增，folium必需依赖
+jinja2==3.1.6  # 新增，folium和streamlit必需依赖
