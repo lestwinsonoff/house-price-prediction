@@ -844,12 +844,7 @@ elif page == "🔍 房源筛选与地图":
         col_map, col_legend = st.columns([8.5, 1.5])
 
         with col_map:
-            st_folium(
-                m,
-                height=750,
-                returned_objects=[],
-                use_container_width=True
-            )
+            folium_static(m, width=1000, height=750)
 
         with col_legend:
             st.markdown(
