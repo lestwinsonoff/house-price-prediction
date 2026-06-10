@@ -1,10 +1,22 @@
+# 1. 核心框架（必须第一个导入）
 import streamlit as st
+
+# 2. 数据处理
 import pandas as pd
 import numpy as np
+
+# 3. 地图可视化（关键修改：用folium_static替代st_folium）
 import folium
-from streamlit_folium import st_folium
+import branca
+import jinja2
+from streamlit_folium import folium_static  # ✅ 纯静态渲染，零序列化错误
+# 移除：from streamlit_folium import st_folium
+# 移除：from folium.plugins import MarkerCluster
+
+# 4. 其他可视化
 import plotly.express as px
-from folium.plugins import MarkerCluster
+
+# 5. 机器学习
 import lightgbm as lgb
 
 # 页面配置
