@@ -623,28 +623,12 @@ elif page == "🔍 房源筛选与地图":
         colors = ['#2ecc71', '#f1c40f', '#e67e22', '#e74c3c', '#8e44ad']
 
         # 房源分布图层（聚合显示）
+        # 房源分布图层（直接显示，无聚合，零报错）
         housing_layer = folium.FeatureGroup(name='🏠 房源分布', show=True)
-
-        marker_cluster = MarkerCluster(
-            name='房源聚合',
-            overlay=True,
-            control=False,
-            icon_create_function="""
-            function(cluster) {
-                var count = cluster.getChildCount();
-                var size = 'small';
-                if (count > 100) size = 'large';
-                else if (count > 50) size = 'medium';
-                return L.divIcon({
-                    html: '<div style="background-color: #1f77b4; color: white; border-radius: 50%; width: 30px; height: 30px; text-align: center; line-height: 30px; font-weight: bold;">' + count + '</div>',
-                    className: 'marker-cluster-' + size,
-                    iconSize: L.point(30, 30)
-                });
-            }
-            """
-        ).add_to(housing_layer)
-
-        for idx, row in display_df.iterrows():
+        
+        # 限制最多显示2000个房源，保证地图流畅
+        display_limit = min(2000, len(display_df))
+        for idx, row in display_df.head(display_limit).iterrows():
             price = row['resale_price']
             for i in range(len(price_bins) - 1):
                 if price_bins[i] <= price < price_bins[i + 1]:
@@ -652,14 +636,14 @@ elif page == "🔍 房源筛选与地图":
                     break
             else:
                 color = colors[-1]
-
+        
             # ✅ 更新：弹窗新增最近商场距离信息
             popup_html = f"""
             <div style="width: 280px; font-size: 13px; line-height: 1.6;">
                 <h4 style="margin: 0 0 10px 0; color: #1f77b4; border-bottom: 1px solid #eee; padding-bottom: 5px;">
                     {row['town']} {row['flat_type']}
                 </h4>
-
+        
                 <div style="margin-bottom: 8px;">
                     <b>基本信息</b><br>
                     • 房屋模型：{row['flat_model']}<br>
@@ -669,21 +653,21 @@ elif page == "🔍 房源筛选与地图":
                     • 总价：<span style="color: {color}; font-weight: bold;">${row['resale_price']:,.0f}</span><br>
                     • 剩余租约：{row['remaining_lease_years']:.1f} 年
                 </div>
-
+        
                 <div style="margin-bottom: 8px;">
                     <b>交通便利性</b><br>
                     • 最近地铁站出入口：{row['nearest_mrt_exit']}<br>
                     • 距离：{row['nearest_mrt_dist_m']:.0f} 米<br>
                     • 最近公交站：{row['nearest_bus_dist_m']:.0f} 米
                 </div>
-
+        
                 <div style="margin-bottom: 8px;">
                     <b>周边配套</b><br>
                     • 最近商场：{row['nearest_mall_dist_m']:.0f} 米<br>
                     • 最近小学：{row['nearest_school_dist_m']:.0f} 米<br>
                     • 最近公园：{row['nearest_park_dist_m']:.0f} 米
                 </div>
-
+        
                 <div>
                     <b>其他信息</b><br>
                     • 区域犯罪率：{row['crime_rate_per_1000']:.2f} 每千人<br>
@@ -691,18 +675,18 @@ elif page == "🔍 房源筛选与地图":
                 </div>
             </div>
             """
-
+        
             folium.CircleMarker(
                 location=[row['latitude'], row['longitude']],
-                radius=5,
+                radius=4,  # 稍微缩小点的大小，避免重叠
                 popup=folium.Popup(popup_html, max_width=300),
                 color=color,
                 fill=True,
                 fill_color=color,
-                fill_opacity=0.8,
+                fill_opacity=0.7,
                 weight=1
-            ).add_to(marker_cluster)
-
+            ).add_to(housing_layer)
+        
         housing_layer.add_to(m)
 
 
