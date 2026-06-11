@@ -1768,7 +1768,32 @@ elif page == "🔮 房价预测":
                 st.metric("预测每平方米价格", f"${price_per_sqm:,.0f}")
 
             with col3:
-                st.metric("合理价格区间", f"${predicted_price * 0.9:,.0f} - ${predicted_price * 1.1:,.0f}")
+                # ✅ 基于模型中位数误差的科学双区间
+                # 核心合理区间：±0.6倍总价中位数误差 | 总宽度≈5.1万 | 置信度≈50%
+                median_total_error = 477.11 * floor_area_sqm
+                core_margin = median_total_error * 0.6
+                core_lower = predicted_price - core_margin
+                core_upper = predicted_price + core_margin
+
+                # 安全参考区间：±0.7倍MAE | 总宽度≈7.5万 | 置信度≈70%
+                safe_margin = 53947 * 0.7
+                safe_lower = predicted_price - safe_margin
+                safe_upper = predicted_price + safe_margin
+
+                # 优先显示核心区间，tooltip显示安全区间
+                st.metric(
+                    "核心合理区间",
+                    f"${core_lower:,.0f} - ${core_upper:,.0f}",
+                    help=f"安全参考区间：${safe_lower:,.0f} - ${safe_upper:,.0f}\n70%的房源会落在安全区间内"
+                )
+
+            # ✅ 新增：实用购房决策提示
+            if predicted_price < core_lower * 0.95:
+                st.success("✅ 该房源价格明显低于市场预期，属于捡漏好房，建议优先考虑")
+            elif predicted_price > safe_upper * 1.05:
+                st.warning("⚠️ 该房源价格明显高于市场预期，建议谨慎出价或继续观望")
+            else:
+                st.info("💡 该房源价格处于合理范围内，可按照核心区间进行议价")
 
             # 商业配套影响分析
             # st.info(f"""
@@ -1780,9 +1805,8 @@ elif page == "🔮 房价预测":
             # 模型性能说明（已更新为最新优化版模型的指标）
             st.info(f"""
             💡 模型性能说明：
-            - 测试集R²得分：0.8792（能解释87.92%的房价变化）
-            - 测试集平均绝对误差：$53,884.19
-            - 预测误差在10%以内的比例：70.21%
+            - 测试集R²得分：0.8789（能解释87.89%的房价变化）
+            - 测试集每平方米平均误差：$574.90/㎡
             """)
 
 # 页面5：购房策略与保值分析（✅ 专业决策版，缩进已修复）
