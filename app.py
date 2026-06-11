@@ -769,7 +769,7 @@ elif page == "🔍 房源筛选与地图":
         except Exception as e:
             pass
         
-        # 公交站图层（使用内置橙色圆点图标）
+        # 公交站图层（✅ 显示全部公交站）
         try:
             bus_data, lat_col, lon_col, name_col = load_geospatial_data(
                 "data/processed/bus_stops_clean.csv",
@@ -779,16 +779,17 @@ elif page == "🔍 房源筛选与地图":
         
             bus_layer = folium.FeatureGroup(name='🚌 公交站', show=False)
         
-            for idx, row in bus_data.sample(n=min(300, len(bus_data)), random_state=42).iterrows():
+            # 🔴 关键修改：删除.sample()抽样，直接遍历全部数据
+            for idx, row in bus_data.iterrows():
                 folium.CircleMarker(
                     location=[row[lat_col], row[lon_col]],
-                    radius=3,
+                    radius=2,  # 建议减小半径，避免点过于密集
                     popup=f"<b>🚌 公交站：{row[name_col]}</b>",
                     color='#ff7f0e',
                     fill=True,
                     fill_color='#ff7f0e',
-                    fill_opacity=0.7,
-                    weight=1
+                    fill_opacity=0.5,  # 降低透明度，缓解视觉拥挤
+                    weight=0  # 去掉边框，减少渲染压力
                 ).add_to(bus_layer)
         
             bus_layer.add_to(m)
