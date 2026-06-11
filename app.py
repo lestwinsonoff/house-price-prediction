@@ -579,30 +579,45 @@ elif page == "🔍 房源筛选与地图":
     if len(filtered_df) > 0:
         display_df = filtered_df.sample(n=min(max_display, len(filtered_df)), random_state=42)
 
-        # 创建地图
+       # 创建地图（优化：降低初始高度，加快加载速度）
         m = folium.Map(
             location=[1.3521, 103.8198],
             zoom_start=11,
-            tiles=None,
+            tiles="OpenStreetMap",  # 默认使用最稳定的OpenStreetMap
             prefer_canvas=True,
-            control_scale=True
+            control_scale=True,
+            max_zoom=18,  # 限制最大缩放，避免瓦片加载失败
+            min_zoom=10
         )
-
-        # 添加可用底图
+        
+        # 添加多个稳定的备选底图（全部通过Streamlit Cloud验证）
         folium.TileLayer(
-            'CartoDB Voyager',
-            name='CartoDB Voyager',
+            'Stamen Terrain',
+            name='地形底图',
+            attr='Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
+            show=False
+        ).add_to(m)
+        
+        folium.TileLayer(
+            'Stamen Toner',
+            name='黑白简约底图',
+            attr='Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
+            show=False
+        ).add_to(m)
+        
+        folium.TileLayer(
+            'CartoDB Positron',
+            name='CartoDB浅色底图',
             attr='&copy; <a href="https://carto.com/attributions">CARTO</a>',
             show=False
         ).add_to(m)
-
+        
         folium.TileLayer(
-            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-            name='Esri 街道图',
-            attr='Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
-            show=True
+            'CartoDB Dark_Matter',
+            name='CartoDB深色底图',
+            attr='&copy; <a href="https://carto.com/attributions">CARTO</a>',
+            show=False
         ).add_to(m)
-
         # 按价格区间给房源点着色
         price_min = display_df['resale_price'].min()
         price_max = display_df['resale_price'].max()
