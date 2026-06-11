@@ -49,3 +49,6 @@ packaging==26.2
 typing-extensions==4.15.0
 six==1.17.0
 tzdata==2026.2
+
+# 新增：Plotly OLS趋势线必需依赖
+statsmodels==0.14.2
