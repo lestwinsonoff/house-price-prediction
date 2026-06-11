@@ -594,55 +594,11 @@ elif page == "🔍 房源筛选与地图":
         # 1. Esri 街道图（当前最稳定，默认显示）
         folium.TileLayer(
             'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-            name='Esri 街道图（推荐）',
+            name='Esri 街道图',
             attr='Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom',
             show=True  # 默认显示这个最稳定的底图
         ).add_to(m)
         
-        # 2. OpenStreetMap（经典底图，恢复原来的默认）
-        folium.TileLayer(
-            'OpenStreetMap',
-            name='OpenStreetMap 标准',
-            attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            show=False
-        ).add_to(m)
-        
-        # 3. CartoDB 系列底图（全部恢复，版权正确）
-        folium.TileLayer(
-            'CartoDB Positron',
-            name='CartoDB 浅色底图',
-            attr='&copy; <a href="https://carto.com/attributions">CARTO</a>',
-            show=False
-        ).add_to(m)
-        
-        folium.TileLayer(
-            'CartoDB Dark_Matter',
-            name='CartoDB 深色底图',
-            attr='&copy; <a href="https://carto.com/attributions">CARTO</a>',
-            show=False
-        ).add_to(m)
-        
-        folium.TileLayer(
-            'CartoDB Voyager',
-            name='CartoDB Voyager',
-            attr='&copy; <a href="https://carto.com/attributions">CARTO</a>',
-            show=False
-        ).add_to(m)
-        
-        # 4. Stamen 系列底图（全部恢复）
-        folium.TileLayer(
-            'Stamen Terrain',
-            name='Stamen 地形底图',
-            attr='Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
-            show=False
-        ).add_to(m)
-        
-        folium.TileLayer(
-            'Stamen Toner',
-            name='Stamen 黑白简约',
-            attr='Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
-            show=False
-        ).add_to(m)
         
         # 按价格区间给房源点着色
         price_min = display_df['resale_price'].min()
