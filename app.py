@@ -341,7 +341,7 @@ if page == "📊 首页概览":
     #     - 百万级房源数量持续增加，目前已占总成交量的约5%
     #     """)
 
-# 页面2：房源筛选与地图（✅ 筛选条件样式全面优化）
+# 页面2：房源筛选与地图（✅ 筛选条件样式全面优化 + Cloud完美兼容）
 elif page == "🔍 房源筛选与地图":
     st.markdown('<h1 class="main-header">房源筛选与地图可视化</h1>', unsafe_allow_html=True)
 
@@ -422,11 +422,11 @@ elif page == "🔍 房源筛选与地图":
 
     max_display = st.sidebar.slider(
         "地图最大显示房源数",
-        min_value=1000,
-        max_value=20000,
-        value=1000,
-        step=1000,
-        help="数值越大，地图加载越慢；建议不超过5000"
+        min_value=500,
+        max_value=5000,
+        value=500,
+        step=100,
+        help="数值越大，地图加载越慢；建议不超过2000"
     )
 
     # ====================== ✅ 优化1：市镇自动标记成熟区/非成熟区 ======================
@@ -546,10 +546,12 @@ elif page == "🔍 房源筛选与地图":
     st.markdown('<h2 class="sub-header">基础统计看板</h2>', unsafe_allow_html=True)
 
     if len(filtered_df) > 0:
+        # 🔴 修复：使用.loc索引器，彻底消除SettingWithCopyWarning
+        filtered_df.loc[:, 'price_per_sqm'] = filtered_df['resale_price'] / filtered_df['floor_area_sqm']
+        
         # 计算所有统计指标
         total_units = len(filtered_df)
         avg_total_price = filtered_df['resale_price'].mean()
-        filtered_df['price_per_sqm'] = filtered_df['resale_price'] / filtered_df['floor_area_sqm']
         avg_price_per_sqm = filtered_df['price_per_sqm'].mean()
         avg_mall_dist = filtered_df['nearest_mall_dist_m'].mean()
 
@@ -571,15 +573,13 @@ elif page == "🔍 房源筛选与地图":
     else:
         st.warning("没有找到符合条件的房源")
 
-    #st.write(f"✅ 找到 {len(filtered_df):,} 条符合条件的房源")
-
     # 地图可视化
     st.markdown('<h2 class="sub-header">房源分布地图</h2>', unsafe_allow_html=True)
 
     if len(filtered_df) > 0:
         display_df = filtered_df.sample(n=min(max_display, len(filtered_df)), random_state=42)
 
-       # 创建地图（优化：降低初始高度，加快加载速度）
+        # 创建地图（优化：降低初始高度，加快加载速度）
         m = folium.Map(
             location=[1.3521, 103.8198],
             zoom_start=11,
@@ -618,6 +618,7 @@ elif page == "🔍 房源筛选与地图":
             attr='&copy; <a href="https://carto.com/attributions">CARTO</a>',
             show=False
         ).add_to(m)
+        
         # 按价格区间给房源点着色
         price_min = display_df['resale_price'].min()
         price_max = display_df['resale_price'].max()
@@ -632,6 +633,8 @@ elif page == "🔍 房源筛选与地图":
             name='房源聚合',
             overlay=True,
             control=False,
+            disableClusteringAtZoom=15,  # 缩放大于15时取消聚合，提升性能
+            maxClusterRadius=50,  # 减小聚合半径，提高响应速度
             icon_create_function="""
             function(cluster) {
                 var count = cluster.getChildCount();
@@ -708,7 +711,6 @@ elif page == "🔍 房源筛选与地图":
 
         housing_layer.add_to(m)
 
-
         # 通用地理数据加载函数
         def load_geospatial_data(file_path, name_column_candidates, default_name):
             try:
@@ -742,7 +744,6 @@ elif page == "🔍 房源筛选与地图":
             except Exception as e:
                 raise Exception(f"{default_name}加载失败：{str(e)}")
 
-
         # 地铁站图层
         try:
             mrt_data, lat_col, lon_col, name_col = load_geospatial_data(
@@ -764,7 +765,7 @@ elif page == "🔍 房源筛选与地图":
         except Exception as e:
             st.sidebar.warning(f"⚠️  {str(e)}")
 
-        # 公交站图层
+        # 公交站图层（优化：减少抽样数量，提升性能）
         try:
             bus_data, lat_col, lon_col, name_col = load_geospatial_data(
                 "data/processed/bus_stops_clean.csv",
@@ -774,7 +775,7 @@ elif page == "🔍 房源筛选与地图":
 
             bus_layer = folium.FeatureGroup(name='🚌 公交站', show=False)
 
-            for idx, row in bus_data.sample(n=min(500, len(bus_data)), random_state=42).iterrows():
+            for idx, row in bus_data.sample(n=min(300, len(bus_data)), random_state=42).iterrows():
                 folium.CircleMarker(
                     location=[row[lat_col], row[lon_col]],
                     radius=2,
@@ -863,11 +864,12 @@ elif page == "🔍 房源筛选与地图":
         col_map, col_legend = st.columns([8.5, 1.5])
 
         with col_map:
+            # 🔴 修复：移除returned_objects参数，替换use_container_width为width="stretch"
             st_folium(
                 m,
-                height=750,
-                returned_objects=[],
-                use_container_width=True
+                height=600,
+                width="stretch",
+                debug=False
             )
 
         with col_legend:
@@ -972,7 +974,7 @@ elif page == "🔍 房源筛选与地图":
         end_idx = min(start_idx + items_per_page, len(filtered_df))
         page_df = filtered_df[display_columns].iloc[start_idx:end_idx]
 
-        # 完整列配置（新增商场距离）
+        # 🔴 修复：替换use_container_width为width="stretch"
         st.dataframe(
             page_df,
             column_config={
@@ -993,7 +995,7 @@ elif page == "🔍 房源筛选与地图":
                 'crime_rate_per_1000': st.column_config.NumberColumn("犯罪率", format="%.2f")
             },
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             height=600
         )
 
