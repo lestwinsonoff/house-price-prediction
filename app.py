@@ -155,25 +155,25 @@ if page == "📊 首页概览":
     col1, col2 = st.columns(2)
 
     with col1:
-    # 年度平均总价趋势
-    price_trend = df.groupby('year')['resale_price'].mean().reset_index()
-    fig = px.line(price_trend, x='year', y='resale_price',
-                  title='年度平均转售总价趋势',
-                  labels={'resale_price': '平均价格（新元）', 'year': '年份'},
-                  markers=True,
-                  color_discrete_sequence=['#1f77b4'])
-    # ✅ 新增：强制显示所有年份刻度
-    fig.update_layout(
-        height=400,
-        showlegend=False,
-        xaxis=dict(
-            tickmode='linear',  # 线性刻度模式
-            dtick=1,  # 每隔1年显示一个刻度
-            range=[price_trend['year'].min() - 0.5, price_trend['year'].max() + 0.5]  # 左右留边距，避免点被截断
+        # 年度平均总价趋势
+        price_trend = df.groupby('year')['resale_price'].mean().reset_index()
+        fig = px.line(price_trend, x='year', y='resale_price',
+                      title='年度平均转售总价趋势',
+                      labels={'resale_price': '平均价格（新元）', 'year': '年份'},
+                      markers=True,
+                      color_discrete_sequence=['#1f77b4'])
+        # ✅ 新增：强制显示所有年份刻度
+        fig.update_layout(
+            height=400,
+            showlegend=False,
+            xaxis=dict(
+                tickmode='linear',  # 线性刻度模式
+                dtick=1,  # 每隔1年显示一个刻度
+                range=[price_trend['year'].min() - 0.5, price_trend['year'].max() + 0.5]  # 左右留边距，避免点被截断
+            )
         )
-    )
-    fig.update_traces(line_width=3)
-    st.plotly_chart(fig, use_container_width=True)
+        fig.update_traces(line_width=3)
+        st.plotly_chart(fig, use_container_width=True)
 
     with col2:
         # 年度平均单价趋势
