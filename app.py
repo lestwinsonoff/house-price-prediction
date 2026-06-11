@@ -743,135 +743,135 @@ elif page == "🔍 房源筛选与地图":
             except Exception as e:
                 raise Exception(f"{default_name}加载失败：{str(e)}")
 
-            # 地铁站图层（使用内置蓝色圆点图标）
-            try:
-                mrt_data, lat_col, lon_col, name_col = load_geospatial_data(
-                    "data/processed/mrt_stations_clean.csv",
-                    ['NAME', 'mrt_name', 'name', 'station_name', 'station'],
-                    "地铁站出入口"
-                )
-            
-                mrt_layer = folium.FeatureGroup(name='🚇 地铁站出入口', show=False)
-            
-                for idx, row in mrt_data.iterrows():
-                    folium.CircleMarker(
-                        location=[row[lat_col], row[lon_col]],
-                        radius=6,
-                        popup=f"<b>🚇 {row[name_col]}</b>",
-                        color='#1f77b4',
-                        fill=True,
-                        fill_color='#1f77b4',
-                        fill_opacity=0.9,
-                        weight=2
-                    ).add_to(mrt_layer)
-            
-                mrt_layer.add_to(m)
-            except Exception as e:
-                pass
-            
-            # 公交站图层（使用内置橙色圆点图标）
-            try:
-                bus_data, lat_col, lon_col, name_col = load_geospatial_data(
-                    "data/processed/bus_stops_clean.csv",
-                    ['bus_stop_name', 'name', 'description', 'bus_stop_code'],
-                    "公交站"
-                )
-            
-                bus_layer = folium.FeatureGroup(name='🚌 公交站', show=False)
-            
-                for idx, row in bus_data.sample(n=min(300, len(bus_data)), random_state=42).iterrows():
-                    folium.CircleMarker(
-                        location=[row[lat_col], row[lon_col]],
-                        radius=3,
-                        popup=f"<b>🚌 公交站：{row[name_col]}</b>",
-                        color='#ff7f0e',
-                        fill=True,
-                        fill_color='#ff7f0e',
-                        fill_opacity=0.7,
-                        weight=1
-                    ).add_to(bus_layer)
-            
-                bus_layer.add_to(m)
-            except Exception as e:
-                pass
-            
-            # 小学图层（使用内置紫色圆点图标）
-            try:
-                school_data, lat_col, lon_col, name_col = load_geospatial_data(
-                    "data/processed/primary_schools_clean.csv",
-                    ['school_name', 'name', 'primary_school', 'school'],
-                    "小学"
-                )
-            
-                school_layer = folium.FeatureGroup(name='🏫 小学', show=False)
-            
-                for idx, row in school_data.iterrows():
-                    folium.CircleMarker(
-                        location=[row[lat_col], row[lon_col]],
-                        radius=5,
-                        popup=f"<b>🏫 {row[name_col]}</b>",
-                        color='#9467bd',
-                        fill=True,
-                        fill_color='#9467bd',
-                        fill_opacity=0.9,
-                        weight=2
-                    ).add_to(school_layer)
-            
-                school_layer.add_to(m)
-            except Exception as e:
-                pass
-            
-            # 公园图层（使用内置绿色圆点图标）
-            try:
-                park_data, lat_col, lon_col, name_col = load_geospatial_data(
-                    "data/processed/parks_clean.csv",
-                    ['park_name', 'name', 'park'],
-                    "公园"
-                )
-            
-                park_layer = folium.FeatureGroup(name='🌳 公园', show=False)
-            
-                for idx, row in park_data.iterrows():
-                    folium.CircleMarker(
-                        location=[row[lat_col], row[lon_col]],
-                        radius=5,
-                        popup=f"<b>🌳 {row[name_col]}</b>",
-                        color='#2ca02c',
-                        fill=True,
-                        fill_color='#2ca02c',
-                        fill_opacity=0.9,
-                        weight=2
-                    ).add_to(park_layer)
-            
-                park_layer.add_to(m)
-            except Exception as e:
-                pass
-            
-            # 商场图层（使用内置红色圆点图标）
-            try:
-                mall_data, lat_col, lon_col, name_col = load_geospatial_data(
-                    "data/processed/malls_clean.csv",
-                    ['mall_name', 'name', 'shopping_mall'],
-                    "商场"
-                )
-            
-                mall_layer = folium.FeatureGroup(name='🛒 商场', show=False)
-            
-                for idx, row in mall_data.iterrows():
-                    folium.CircleMarker(
-                        location=[row[lat_col], row[lon_col]],
-                        radius=5,
-                        popup=f"<b>🛒 {row[name_col]}</b>",
-                        color='#d62728',
-                        fill=True,
-                        fill_color='#d62728',
-                        fill_opacity=0.9,
-                        weight=2
-                    ).add_to(mall_layer)
-            
-                mall_layer.add_to(m)
-            except Exception as e:
-                pass
+        # 地铁站图层（使用内置蓝色圆点图标）
+        try:
+            mrt_data, lat_col, lon_col, name_col = load_geospatial_data(
+                "data/processed/mrt_stations_clean.csv",
+                ['NAME', 'mrt_name', 'name', 'station_name', 'station'],
+                "地铁站出入口"
+            )
+        
+            mrt_layer = folium.FeatureGroup(name='🚇 地铁站出入口', show=False)
+        
+            for idx, row in mrt_data.iterrows():
+                folium.CircleMarker(
+                    location=[row[lat_col], row[lon_col]],
+                    radius=6,
+                    popup=f"<b>🚇 {row[name_col]}</b>",
+                    color='#1f77b4',
+                    fill=True,
+                    fill_color='#1f77b4',
+                    fill_opacity=0.9,
+                    weight=2
+                ).add_to(mrt_layer)
+        
+            mrt_layer.add_to(m)
+        except Exception as e:
+            pass
+        
+        # 公交站图层（使用内置橙色圆点图标）
+        try:
+            bus_data, lat_col, lon_col, name_col = load_geospatial_data(
+                "data/processed/bus_stops_clean.csv",
+                ['bus_stop_name', 'name', 'description', 'bus_stop_code'],
+                "公交站"
+            )
+        
+            bus_layer = folium.FeatureGroup(name='🚌 公交站', show=False)
+        
+            for idx, row in bus_data.sample(n=min(300, len(bus_data)), random_state=42).iterrows():
+                folium.CircleMarker(
+                    location=[row[lat_col], row[lon_col]],
+                    radius=3,
+                    popup=f"<b>🚌 公交站：{row[name_col]}</b>",
+                    color='#ff7f0e',
+                    fill=True,
+                    fill_color='#ff7f0e',
+                    fill_opacity=0.7,
+                    weight=1
+                ).add_to(bus_layer)
+        
+            bus_layer.add_to(m)
+        except Exception as e:
+            pass
+        
+        # 小学图层（使用内置紫色圆点图标）
+        try:
+            school_data, lat_col, lon_col, name_col = load_geospatial_data(
+                "data/processed/primary_schools_clean.csv",
+                ['school_name', 'name', 'primary_school', 'school'],
+                "小学"
+            )
+        
+            school_layer = folium.FeatureGroup(name='🏫 小学', show=False)
+        
+            for idx, row in school_data.iterrows():
+                folium.CircleMarker(
+                    location=[row[lat_col], row[lon_col]],
+                    radius=5,
+                    popup=f"<b>🏫 {row[name_col]}</b>",
+                    color='#9467bd',
+                    fill=True,
+                    fill_color='#9467bd',
+                    fill_opacity=0.9,
+                    weight=2
+                ).add_to(school_layer)
+        
+            school_layer.add_to(m)
+        except Exception as e:
+            pass
+        
+        # 公园图层（使用内置绿色圆点图标）
+        try:
+            park_data, lat_col, lon_col, name_col = load_geospatial_data(
+                "data/processed/parks_clean.csv",
+                ['park_name', 'name', 'park'],
+                "公园"
+            )
+        
+            park_layer = folium.FeatureGroup(name='🌳 公园', show=False)
+        
+            for idx, row in park_data.iterrows():
+                folium.CircleMarker(
+                    location=[row[lat_col], row[lon_col]],
+                    radius=5,
+                    popup=f"<b>🌳 {row[name_col]}</b>",
+                    color='#2ca02c',
+                    fill=True,
+                    fill_color='#2ca02c',
+                    fill_opacity=0.9,
+                    weight=2
+                ).add_to(park_layer)
+        
+            park_layer.add_to(m)
+        except Exception as e:
+            pass
+        
+        # 商场图层（使用内置红色圆点图标）
+        try:
+            mall_data, lat_col, lon_col, name_col = load_geospatial_data(
+                "data/processed/malls_clean.csv",
+                ['mall_name', 'name', 'shopping_mall'],
+                "商场"
+            )
+        
+            mall_layer = folium.FeatureGroup(name='🛒 商场', show=False)
+        
+            for idx, row in mall_data.iterrows():
+                folium.CircleMarker(
+                    location=[row[lat_col], row[lon_col]],
+                    radius=5,
+                    popup=f"<b>🛒 {row[name_col]}</b>",
+                    color='#d62728',
+                    fill=True,
+                    fill_color='#d62728',
+                    fill_opacity=0.9,
+                    weight=2
+                ).add_to(mall_layer)
+        
+            mall_layer.add_to(m)
+        except Exception as e:
+            pass
 
         # 添加图层控制
         folium.LayerControl(
