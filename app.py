@@ -579,43 +579,68 @@ elif page == "🔍 房源筛选与地图":
     if len(filtered_df) > 0:
         display_df = filtered_df.sample(n=min(max_display, len(filtered_df)), random_state=42)
 
-        # 创建地图（优化：降低初始高度，加快加载速度）
+       # 创建地图（保留所有历史底图+新增稳定底图）
         m = folium.Map(
             location=[1.3521, 103.8198],
             zoom_start=11,
-            tiles="OpenStreetMap",  # 默认使用最稳定的OpenStreetMap
+            tiles=None,  # 不使用默认底图，全部手动添加
             prefer_canvas=True,
             control_scale=True,
-            max_zoom=18,  # 限制最大缩放，避免瓦片加载失败
+            max_zoom=18,
             min_zoom=10
         )
         
-        # 添加多个稳定的备选底图（全部通过Streamlit Cloud验证）
+        # ====================== 所有可用底图（按稳定性排序） ======================
+        # 1. Esri 街道图（当前最稳定，默认显示）
         folium.TileLayer(
-            'Stamen Terrain',
-            name='地形底图',
-            attr='Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+            name='Esri 街道图（推荐）',
+            attr='Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom',
+            show=True  # 默认显示这个最稳定的底图
+        ).add_to(m)
+        
+        # 2. OpenStreetMap（经典底图，恢复原来的默认）
+        folium.TileLayer(
+            'OpenStreetMap',
+            name='OpenStreetMap 标准',
+            attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             show=False
         ).add_to(m)
         
-        folium.TileLayer(
-            'Stamen Toner',
-            name='黑白简约底图',
-            attr='Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
-            show=False
-        ).add_to(m)
-        
+        # 3. CartoDB 系列底图（全部恢复，版权正确）
         folium.TileLayer(
             'CartoDB Positron',
-            name='CartoDB浅色底图',
+            name='CartoDB 浅色底图',
             attr='&copy; <a href="https://carto.com/attributions">CARTO</a>',
             show=False
         ).add_to(m)
         
         folium.TileLayer(
             'CartoDB Dark_Matter',
-            name='CartoDB深色底图',
+            name='CartoDB 深色底图',
             attr='&copy; <a href="https://carto.com/attributions">CARTO</a>',
+            show=False
+        ).add_to(m)
+        
+        folium.TileLayer(
+            'CartoDB Voyager',
+            name='CartoDB Voyager',
+            attr='&copy; <a href="https://carto.com/attributions">CARTO</a>',
+            show=False
+        ).add_to(m)
+        
+        # 4. Stamen 系列底图（全部恢复）
+        folium.TileLayer(
+            'Stamen Terrain',
+            name='Stamen 地形底图',
+            attr='Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
+            show=False
+        ).add_to(m)
+        
+        folium.TileLayer(
+            'Stamen Toner',
+            name='Stamen 黑白简约',
+            attr='Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
             show=False
         ).add_to(m)
         
