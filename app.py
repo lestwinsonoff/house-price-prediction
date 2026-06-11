@@ -560,36 +560,70 @@ elif page == "🔍 房源筛选与地图":
         (df['nearest_mall_dist_m'] >= mall_range[0]) & (df['nearest_mall_dist_m'] <= mall_range[1])
         ]
 
-    # 基础统计看板
+    # 基础统计看板（✅ 优化版）
     st.markdown('<h2 class="sub-header">基础统计看板</h2>', unsafe_allow_html=True)
-
+    
+    # 全局统计卡片样式美化
+    st.markdown("""
+    <style>
+    /* 统计卡片整体样式 */
+    [data-testid="stMetric"] {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-left: 4px solid #3498db;
+    }
+    
+    /* 统计数值样式 */
+    [data-testid="stMetric"] > div:first-child > div:last-child {
+        font-size: 1.8rem !important;
+        font-weight: 700 !important;
+        color: #2c3e50;
+    }
+    
+    /* 统计标签样式 */
+    [data-testid="stMetric"] label {
+        font-size: 0.95rem !important;
+        font-weight: 500 !important;
+        color: #7f8c8d;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     if len(filtered_df) > 0:
-        # 🔴 修复：使用.loc索引器，彻底消除SettingWithCopyWarning
-        filtered_df.loc[:, 'price_per_sqm'] = filtered_df['resale_price'] / filtered_df['floor_area_sqm']
+        # ✅ 提前计算一次，避免重复计算
+        filtered_df['price_per_sqm'] = filtered_df['resale_price'] / filtered_df['floor_area_sqm']
         
-        # 计算所有统计指标
+        # 计算所有统计指标（增加中位数，更有参考价值）
         total_units = len(filtered_df)
         avg_total_price = filtered_df['resale_price'].mean()
+        median_total_price = filtered_df['resale_price'].median()  # 中位数不受极端值影响
         avg_price_per_sqm = filtered_df['price_per_sqm'].mean()
+        avg_remaining_lease = filtered_df['remaining_lease_years'].mean()
+        avg_mrt_dist = filtered_df['nearest_mrt_dist_m'].mean()
         avg_mall_dist = filtered_df['nearest_mall_dist_m'].mean()
-
-        # 6列卡片展示
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
-
-        with col1:
-            st.metric("筛选后成交套数", f"{total_units:,}")
-        with col2:
-            st.metric("平均单价", f"${avg_price_per_sqm:,.0f}/㎡")
-        with col3:
+    
+        # ✅ 2行3列布局，更宽敞更美观
+        row1_col1, row1_col2, row1_col3 = st.columns(3)
+        row2_col1, row2_col2, row2_col3 = st.columns(3)
+    
+        with row1_col1:
+            st.metric("筛选后成交套数", f"{total_units:,} 套")
+        with row1_col2:
             st.metric("平均总价", f"${avg_total_price:,.0f}")
-        with col4:
-            st.metric("平均商场距离", f"{avg_mall_dist:.0f} 米")
-        with col5:
-            st.metric("最高单价", f"${filtered_df['price_per_sqm'].max():,.0f}/㎡")
-        with col6:
-            st.metric("最低单价", f"${filtered_df['price_per_sqm'].min():,.0f}/㎡")
+        with row1_col3:
+            st.metric("中位数总价", f"${median_total_price:,.0f}", help="更能代表大多数房源的实际价格")
+    
+        with row2_col1:
+            st.metric("平均单价", f"${avg_price_per_sqm:,.0f}/㎡")
+        with row2_col2:
+            st.metric("平均剩余租约", f"{avg_remaining_lease:.1f} 年")
+        with row2_col3:
+            st.metric("平均地铁站距离", f"{avg_mrt_dist:.0f} 米")
+    
     else:
-        st.warning("没有找到符合条件的房源")
+        st.warning("⚠️ 没有找到符合条件的房源，请调整筛选条件")
 
     # 地图可视化
     st.markdown('<h2 class="sub-header">房源分布地图</h2>', unsafe_allow_html=True)
