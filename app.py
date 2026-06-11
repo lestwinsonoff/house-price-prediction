@@ -154,7 +154,7 @@ if page == "📊 首页概览":
 
     col1, col2 = st.columns(2)
 
-    with col1:
+        with col1:
         # 年度平均总价趋势
         price_trend = df.groupby('year')['resale_price'].mean().reset_index()
         fig = px.line(price_trend, x='year', y='resale_price',
@@ -162,22 +162,40 @@ if page == "📊 首页概览":
                       labels={'resale_price': '平均价格（新元）', 'year': '年份'},
                       markers=True,
                       color_discrete_sequence=['#1f77b4'])
-        fig.update_layout(height=400, showlegend=False)
+        # ✅ 新增：强制显示所有年份刻度
+        fig.update_layout(
+            height=400,
+            showlegend=False,
+            xaxis=dict(
+                tickmode='linear',  # 线性刻度模式
+                dtick=1,  # 每隔1年显示一个刻度
+                range=[price_trend['year'].min() - 0.5, price_trend['year'].max() + 0.5]  # 左右留边距，避免点被截断
+            )
+        )
         fig.update_traces(line_width=3)
         st.plotly_chart(fig, use_container_width=True)
 
-    with col2:
-        # 年度平均单价趋势
-        df['price_per_sqm'] = df['resale_price'] / df['floor_area_sqm']
-        price_per_sqm_trend = df.groupby('year')['price_per_sqm'].mean().reset_index()
-        fig = px.line(price_per_sqm_trend, x='year', y='price_per_sqm',
-                      title='年度平均转售单价趋势',
-                      labels={'price_per_sqm': '单价（新元/㎡）', 'year': '年份'},
-                      markers=True,
-                      color_discrete_sequence=['#e74c3c'])
-        fig.update_layout(height=400, showlegend=False)
-        fig.update_traces(line_width=3)
-        st.plotly_chart(fig, use_container_width=True)
+        with col2:
+            # 年度平均单价趋势
+            df['price_per_sqm'] = df['resale_price'] / df['floor_area_sqm']
+            price_per_sqm_trend = df.groupby('year')['price_per_sqm'].mean().reset_index()
+            fig = px.line(price_per_sqm_trend, x='year', y='price_per_sqm',
+                          title='年度平均转售单价趋势',
+                          labels={'price_per_sqm': '单价（新元/㎡）', 'year': '年份'},
+                          markers=True,
+                          color_discrete_sequence=['#e74c3c'])
+            # ✅ 同样添加x轴配置
+            fig.update_layout(
+                height=400,
+                showlegend=False,
+                xaxis=dict(
+                    tickmode='linear',
+                    dtick=1,
+                    range=[price_per_sqm_trend['year'].min() - 0.5, price_per_sqm_trend['year'].max() + 0.5]
+                )
+            )
+            fig.update_traces(line_width=3)
+            st.plotly_chart(fig, use_container_width=True)
 
     # 市场动态提示
     st.info("""
@@ -1193,27 +1211,46 @@ elif page == "📈 价格影响因素分析":
         **其他镇区**：不属于上述两类的区域，如Jurong East、Bishan等
         """)
 
-    # 3.1 平均房价对比（带误差棒）
+    # 3.1 平均房价对比（箱线图）
     st.markdown('<h3 class="sub-header">3.1 平均房价对比</h3>', unsafe_allow_html=True)
-    town_type_stats = df.groupby('town_type')['price_per_sqm'].agg(['mean', 'std']).reset_index()
 
-    fig = px.bar(town_type_stats, x='town_type', y='mean',
-                 title='成熟区与非成熟区平均单价对比（含标准差）',
-                 labels={'mean': '平均单价（新元/㎡）', 'town_type': '镇区类型'},
+    fig = px.box(df, x='town_type', y='price_per_sqm',
+                 title='成熟区与非成熟区房价分布对比',
+                 labels={'price_per_sqm': '单价（新元/㎡）', 'town_type': '镇区类型'},
                  color='town_type',
                  color_discrete_map={'成熟区': '#e74c3c', '非成熟区': '#3498db', '其他': '#95a5a6'},
-                 error_y='std')  # 添加误差棒（标准差）
-    fig.update_layout(height=400, showlegend=False)
+                 category_orders={'town_type': ['其他', '成熟区', '非成熟区']})
+
+    fig.update_layout(
+        height=400,
+        showlegend=False
+    )
+
+    # 显示平均值点
+    fig.update_traces(
+        boxmean=True,  # 显示平均值
+        width=0.6
+    )
+
     st.plotly_chart(fig, use_container_width=True)
 
     # 3.2 价格走势对比
     st.markdown('<h3 class="sub-header">3.2 价格走势对比</h3>', unsafe_allow_html=True)
     trend_df = df.groupby(['year', 'town_type'])['price_per_sqm'].mean().reset_index()
     fig = px.line(trend_df, x='year', y='price_per_sqm', color='town_type',
-                  title='2012-2025年成熟区与非成熟区价格走势',
+                  title='2015-2026年成熟区与非成熟区价格走势',
                   labels={'price_per_sqm': '平均单价（新元/㎡）', 'year': '年份', 'town_type': '镇区类型'},
                   color_discrete_map={'成熟区': '#e74c3c', '非成熟区': '#3498db', '其他': '#95a5a6'})
-    fig.update_layout(height=500)
+
+    # ✅ 新增：和前面两个图完全一致的x轴配置
+    fig.update_layout(
+        height=500,
+        xaxis=dict(
+            tickmode='linear',  # 线性刻度模式
+            dtick=1,  # 每隔1年显示一个刻度
+            range=[trend_df['year'].min() - 0.5, trend_df['year'].max() + 0.5]  # 左右留边距，避免首尾点被截断
+        )
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     # 3.3 主流户型分布对比（热力图）
