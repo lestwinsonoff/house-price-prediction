@@ -850,7 +850,9 @@ elif page == "🔍 房源筛选与地图":
                 m,
                 height=600,
                 width="stretch",
-                debug=False
+                debug=False,
+                returned_objects=[],  # 🔴 这一行是关键！
+                key="main_map"  # 添加唯一key，避免组件冲突
             )
 
         with col_legend:
