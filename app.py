@@ -43,33 +43,32 @@ st.markdown("""
 # 数据和模型缓存
 @st.cache_data(show_spinner="正在加载数据...")
 def load_data():
-    # ✅ 更新：使用包含商场数据的最终数据集
     #df = pd.read_csv("../data/processed/hdb_data_with_bus_and_mall.csv", low_memory=False)
     #df = pd.read_csv("../data/processed/hdb_data_final_small.csv", low_memory=False)
     df = pd.read_parquet("data/processed/hdb_data_final_small.parquet")
 
-    # 预处理（与训练代码完全一致）
+    # 预处理
     #df['month'] = pd.to_datetime(df['month'])
     df['lease_commence_date'] = pd.to_numeric(df['lease_commence_date'], errors='coerce')
     df['remaining_lease_years'] = 99 - (df['year'] - df['lease_commence_date'])
     df['remaining_lease_months'] = df['remaining_lease_years'] * 12
 
-    # 计算目标编码映射（用于预测）
+    # 计算目标编码映射
     town_map = df.groupby('town')['resale_price'].mean().to_dict()
     flat_type_map = df.groupby('flat_type')['resale_price'].mean().to_dict()
     flat_model_map = df.groupby('flat_model')['resale_price'].mean().to_dict()
     storey_range_map = df.groupby('storey_range')['resale_price'].mean().to_dict()
 
-    # ✅ 新增：计算综合得分（与训练代码完全一致）
+    # 计算综合得分
     df['transport_score'] = 1 / (df['nearest_mrt_dist_m'] / 1000 + df['nearest_bus_dist_m'] / 500 + 0.1)
     df['commercial_score'] = 1 / (df['nearest_mall_dist_m'] / 1000 + 0.1)
 
-    # ✅ 更新：市镇统计数据新增商业得分
+    # 市镇统计数据新增商业得分
     town_stats = df.groupby('town').agg({
         'remaining_lease_months': 'mean',
         'floor_area_sqm': 'mean',
         'transport_score': 'mean',
-        'commercial_score': 'mean'  # 新增：区域平均商业得分
+        'commercial_score': 'mean'  
     }).reset_index()
     town_stats.columns = ['town', 'avg_lease_months', 'avg_area_sqm',
                           'avg_transport_score', 'avg_commercial_score']
@@ -78,10 +77,9 @@ def load_data():
     return df, town_map, flat_type_map, flat_model_map, storey_range_map, town_stats_dict
 
 
-# ✅ 替换为LightGBM版本
+# LightGBM版本
 @st.cache_resource(show_spinner="正在加载模型...")
 def load_model():
-    # LightGBM官方推荐的加载方式
     model = lgb.Booster(model_file='models/hdb_price_prediction_model.txt')
     return model
 
@@ -97,14 +95,13 @@ page = st.sidebar.radio(
     ["📊 首页概览", "🔍 房源筛选与地图", "📈 价格影响因素分析", "🔮 房价预测", "💡 购房策略"]
 )
 
-# 页面1：首页概览（✅ 专业仪表盘版）
+# 页面1：首页概览
 if page == "📊 首页概览":
     st.markdown('<h1 class="main-header">新加坡HDB房价分析与预测系统</h1>', unsafe_allow_html=True)
 
-    # ====================== 1. 核心指标看板（扩展到6个） ======================
     st.markdown('<h2 class="sub-header">📊 市场核心指标</h2>', unsafe_allow_html=True)
 
-    # 预计算所有统计指标（只计算一次）
+    # 预计算所有统计指标
     total_units = len(df)
     avg_total_price = df['resale_price'].mean()
     median_total_price = df['resale_price'].median()
@@ -149,7 +146,6 @@ if page == "📊 首页概览":
         st.caption(f"占比: {million_dollar_units / total_units * 100:.1f}%")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ====================== 2. 房价趋势分析（双列布局） ======================
     st.markdown('<h2 class="sub-header">📈 房价走势分析（2015-2026）</h2>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
@@ -162,13 +158,13 @@ if page == "📊 首页概览":
                       labels={'resale_price': '平均价格（新元）', 'year': '年份'},
                       markers=True,
                       color_discrete_sequence=['#1f77b4'])
-        # ✅ 新增：强制显示所有年份刻度
+        # 强制显示所有年份刻度
         fig.update_layout(
             height=400,
             showlegend=False,
             xaxis=dict(
-                tickmode='linear',  # 线性刻度模式
-                dtick=1,  # 每隔1年显示一个刻度
+                tickmode='linear',  
+                dtick=1,  
                 range=[price_trend['year'].min() - 0.5, price_trend['year'].max() + 0.5]  # 左右留边距，避免点被截断
             )
         )
@@ -184,7 +180,7 @@ if page == "📊 首页概览":
                       labels={'price_per_sqm': '单价（新元/㎡）', 'year': '年份'},
                       markers=True,
                       color_discrete_sequence=['#e74c3c'])
-        # ✅ 同样添加x轴配置
+        # 同样添加x轴配置
         fig.update_layout(
             height=400,
             showlegend=False,
@@ -203,7 +199,6 @@ if page == "📊 首页概览":
     市场进入温和调整期。预计2026年全年价格将保持稳定，涨幅在2%-4%之间。
     """)
 
-    # ====================== 3. 区域房价排名（棒棒糖图） ======================
     st.markdown('<h2 class="sub-header">🏙️ 各区域房价排名</h2>', unsafe_allow_html=True)
 
     # 计算各区域平均单价并排序
@@ -234,7 +229,6 @@ if page == "📊 首页概览":
     fig.update_layout(height=600, showlegend=False, yaxis={'categoryorder': 'total ascending'})
     st.plotly_chart(fig, use_container_width=True)
 
-    # ====================== 4. 户型分析（双列布局） ======================
     st.markdown('<h2 class="sub-header">🏠 户型分布与价格</h2>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
@@ -262,7 +256,6 @@ if page == "📊 首页概览":
         fig.update_layout(height=450, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
-    # ====================== 5. 价格区间分布 ======================
     st.markdown('<h2 class="sub-header">💰 房价分布情况</h2>', unsafe_allow_html=True)
 
     # 价格分箱
@@ -281,7 +274,6 @@ if page == "📊 首页概览":
     fig.update_layout(height=400, showlegend=False)
     st.plotly_chart(fig, use_container_width=True)
 
-    # ====================== 6. 配套设施概览 ======================
     st.markdown('<h2 class="sub-header">🛍️ 周边配套设施统计</h2>', unsafe_allow_html=True)
 
     col1, col2, col3, col4 = st.columns(4)
@@ -338,32 +330,11 @@ if page == "📊 首页概览":
         fig.update_layout(height=350)
         st.plotly_chart(fig, use_container_width=True)
 
-    # ====================== 7. 关键数据洞察（折叠面板） ======================
-    # with st.expander("📌 点击查看关键数据洞察"):
-    #     st.markdown("""
-    #     ### 🏆 市场之最
-    #     - **最贵区域**：BUKIT TIMAH（武吉知马），平均单价超过$12,000/㎡
-    #     - **最便宜区域**：WOODLANDS（兀兰），平均单价约$4,500/㎡
-    #     - **最受欢迎户型**：4 ROOM（四室一厅），占总成交量的45%以上
-    #     - **最高成交价格**：超过$200万新元（BUKIT TIMAH的五房式阁楼）
-    #
-    #     ### 📊 核心发现
-    #     1. **区域差异显著**：成熟区平均房价比非成熟区高出约40%
-    #     2. **地铁溢价明显**：距离地铁站500米以内的房源平均溢价约15%
-    #     3. **名校效应**：距离优质小学1000米以内的房源平均溢价约12%
-    #     4. **商业配套重要性**：距离商场500米以内的房源平均溢价约8%
-    #
-    #     ### 📈 市场趋势
-    #     - 2020-2023年房价快速上涨，累计涨幅超过30%
-    #     - 2024年开始增速放缓，2026年第一季度出现首次下跌
-    #     - 百万级房源数量持续增加，目前已占总成交量的约5%
-    #     """)
 
-# 页面2：房源筛选与地图（✅ 筛选条件样式全面优化 + Cloud完美兼容）
+# 页面2：房源筛选与地图
 elif page == "🔍 房源筛选与地图":
     st.markdown('<h1 class="main-header">房源筛选与地图可视化</h1>', unsafe_allow_html=True)
 
-    # ====================== ✅ 新增：全局筛选条件样式优化 ======================
     st.markdown("""
     <style>
     /* 侧边栏整体样式 */
@@ -447,7 +418,6 @@ elif page == "🔍 房源筛选与地图":
         help="数值越大，地图加载越慢；建议不超过2000"
     )
 
-    # ====================== ✅ 优化1：市镇自动标记成熟区/非成熟区 ======================
     # 与预测页面保持一致的定义
     mature_towns = ['QUEENSTOWN', 'TOA PAYOH', 'ANG MO KIO', 'BUKIT TIMAH', 'CLEMENTI', 'BUKIT MERAH']
     non_mature_towns = ['PUNGGOL', 'SENGKANG', 'WOODLANDS', 'YISHUN', 'SEMBAWANG', 'TAMPINES']
@@ -475,7 +445,6 @@ elif page == "🔍 房源筛选与地图":
     # 反向映射回原始市镇名称
     selected_towns = [town_label_map[label] for label in selected_town_labels]
 
-    # ====================== ✅ 优化2：房型添加详细说明 ======================
     flat_types = sorted(df['flat_type'].unique().tolist())
     flat_type_help = """
     户型说明：
@@ -560,7 +529,7 @@ elif page == "🔍 房源筛选与地图":
         (df['nearest_mall_dist_m'] >= mall_range[0]) & (df['nearest_mall_dist_m'] <= mall_range[1])
         ]
 
-    # 基础统计看板（✅ 优化版）
+    # 基础统计看板
     st.markdown('<h2 class="sub-header">基础统计看板</h2>', unsafe_allow_html=True)
     
     # 全局统计卡片样式美化
@@ -592,19 +561,19 @@ elif page == "🔍 房源筛选与地图":
     """, unsafe_allow_html=True)
     
     if len(filtered_df) > 0:
-        # ✅ 提前计算一次，避免重复计算
+        # 提前计算一次，避免重复计算
         filtered_df['price_per_sqm'] = filtered_df['resale_price'] / filtered_df['floor_area_sqm']
         
-        # 计算所有统计指标（增加中位数，更有参考价值）
+        # 计算所有统计指标
         total_units = len(filtered_df)
         avg_total_price = filtered_df['resale_price'].mean()
-        median_total_price = filtered_df['resale_price'].median()  # 中位数不受极端值影响
+        median_total_price = filtered_df['resale_price'].median()  
         avg_price_per_sqm = filtered_df['price_per_sqm'].mean()
         avg_remaining_lease = filtered_df['remaining_lease_years'].mean()
         avg_mrt_dist = filtered_df['nearest_mrt_dist_m'].mean()
         avg_mall_dist = filtered_df['nearest_mall_dist_m'].mean()
     
-        # ✅ 2行3列布局，更宽敞更美观
+        # 2行3列布局，更宽敞更美观
         row1_col1, row1_col2, row1_col3 = st.columns(3)
         row2_col1, row2_col2, row2_col3 = st.columns(3)
     
@@ -631,24 +600,23 @@ elif page == "🔍 房源筛选与地图":
     if len(filtered_df) > 0:
         display_df = filtered_df.sample(n=min(max_display, len(filtered_df)), random_state=42)
 
-       # 创建地图（保留所有历史底图+新增稳定底图）
+       # 创建地图
         m = folium.Map(
             location=[1.3521, 103.8198],
             zoom_start=11,
-            tiles=None,  # 不使用默认底图，全部手动添加
+            tiles=None,  
             prefer_canvas=True,
             control_scale=True,
             max_zoom=18,
             min_zoom=10
         )
         
-        # ====================== 所有可用底图（按稳定性排序） ======================
-        # 1. Esri 街道图（当前最稳定，默认显示）
+        # 1. Esri 街道图
         folium.TileLayer(
             'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
             name='Esri 街道图',
             attr='Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom',
-            show=True  # 默认显示这个最稳定的底图
+            show=True  
         ).add_to(m)
         
         
@@ -659,15 +627,15 @@ elif page == "🔍 房源筛选与地图":
         price_labels = ['<30万', '30-50万', '50-70万', '70-100万', '>100万']
         colors = ['#2ecc71', '#f1c40f', '#e67e22', '#e74c3c', '#8e44ad']
 
-        # 房源分布图层（聚合显示）
+        # 房源分布图层
         housing_layer = folium.FeatureGroup(name='🏠 房源分布', show=True)
 
         marker_cluster = MarkerCluster(
             name='房源聚合',
             overlay=True,
             control=False,
-            disableClusteringAtZoom=15,  # 缩放大于15时取消聚合，提升性能
-            maxClusterRadius=50,  # 减小聚合半径，提高响应速度
+            disableClusteringAtZoom=15,  
+            maxClusterRadius=50,  
             icon_create_function="""
             function(cluster) {
                 var count = cluster.getChildCount();
@@ -692,7 +660,6 @@ elif page == "🔍 房源筛选与地图":
             else:
                 color = colors[-1]
 
-            # ✅ 更新：弹窗新增最近商场距离信息
             popup_html = f"""
             <div style="width: 280px; font-size: 13px; line-height: 1.6;">
                 <h4 style="margin: 0 0 10px 0; color: #1f77b4; border-bottom: 1px solid #eee; padding-bottom: 5px;">
@@ -777,7 +744,7 @@ elif page == "🔍 房源筛选与地图":
             except Exception as e:
                 raise Exception(f"{default_name}加载失败：{str(e)}")
 
-        # 地铁站图层（使用内置蓝色圆点图标）
+        # 地铁站图层
         try:
             mrt_data, lat_col, lon_col, name_col = load_geospatial_data(
                 "data/processed/mrt_stations_clean.csv",
@@ -803,7 +770,7 @@ elif page == "🔍 房源筛选与地图":
         except Exception as e:
             pass
         
-        # 公交站图层（✅ 显示全部公交站）
+        # 公交站图层
         try:
             bus_data, lat_col, lon_col, name_col = load_geospatial_data(
                 "data/processed/bus_stops_clean.csv",
@@ -813,24 +780,23 @@ elif page == "🔍 房源筛选与地图":
         
             bus_layer = folium.FeatureGroup(name='🚌 公交站', show=False)
         
-            # 🔴 关键修改：删除.sample()抽样，直接遍历全部数据
             for idx, row in bus_data.iterrows():
                 folium.CircleMarker(
                     location=[row[lat_col], row[lon_col]],
-                    radius=2,  # 建议减小半径，避免点过于密集
+                    radius=2, 
                     popup=f"<b>🚌 公交站：{row[name_col]}</b>",
                     color='#ff7f0e',
                     fill=True,
                     fill_color='#ff7f0e',
-                    fill_opacity=0.5,  # 降低透明度，缓解视觉拥挤
-                    weight=0  # 去掉边框，减少渲染压力
+                    fill_opacity=0.5, 
+                    weight=0  
                 ).add_to(bus_layer)
         
             bus_layer.add_to(m)
         except Exception as e:
             pass
         
-        # 小学图层（使用内置紫色圆点图标）
+        # 小学图层
         try:
             school_data, lat_col, lon_col, name_col = load_geospatial_data(
                 "data/processed/primary_schools_clean.csv",
@@ -856,7 +822,7 @@ elif page == "🔍 房源筛选与地图":
         except Exception as e:
             pass
         
-        # 公园图层（使用内置绿色圆点图标）
+        # 公园图层
         try:
             park_data, lat_col, lon_col, name_col = load_geospatial_data(
                 "data/processed/parks_clean.csv",
@@ -882,7 +848,7 @@ elif page == "🔍 房源筛选与地图":
         except Exception as e:
             pass
         
-        # 商场图层（使用内置红色圆点图标）
+        # 商场图层
         try:
             mall_data, lat_col, lon_col, name_col = load_geospatial_data(
                 "data/processed/malls_clean.csv",
@@ -919,14 +885,13 @@ elif page == "🔍 房源筛选与地图":
         col_map, col_legend = st.columns([8.5, 1.5])
 
         with col_map:
-            # 🔴 修复：移除returned_objects参数，替换use_container_width为width="stretch"
             st_folium(
                 m,
                 height=600,
                 width="stretch",
                 debug=False,
-                returned_objects=[],  # 🔴 这一行是关键！
-                key="main_map"  # 添加唯一key，避免组件冲突
+                returned_objects=[],  
+                key="main_map"  
             )
 
         with col_legend:
@@ -943,11 +908,10 @@ elif page == "🔍 房源筛选与地图":
                 unsafe_allow_html=True
             )
 
-    # ✅ 更新：数据表格新增商场距离列
     st.markdown('<h2 class="sub-header">数据表格</h2>', unsafe_allow_html=True)
 
     if len(filtered_df) > 0:
-        # 排序功能（新增商场距离排序）
+        # 排序功能
         sort_by = st.selectbox("排序方式",
                                ["价格升序", "价格降序",
                                 "单价升序", "单价降序",
@@ -997,7 +961,7 @@ elif page == "🔍 房源筛选与地图":
         elif sort_by == "犯罪率降序":
             filtered_df = filtered_df.sort_values('crime_rate_per_1000', ascending=False)
 
-        # 完善后的表格列（新增商场距离）
+        # 完善后的表格列
         display_columns = [
             'town',  # 镇区
             'flat_type',  # 房型
@@ -1009,7 +973,7 @@ elif page == "🔍 房源筛选与地图":
             'year',  # 交易年份
             'nearest_mrt_exit',  # 最近地铁站出入口
             'nearest_mrt_dist_m',  # 地铁站距离
-            'nearest_mall_dist_m',  # ✅ 新增：最近商场距离
+            'nearest_mall_dist_m',  # 最近商场距离
             'nearest_bus_dist_m',  # 公交站距离
             'nearest_school_dist_m',  # 小学距离
             'nearest_park_dist_m',  # 公园距离
@@ -1031,7 +995,6 @@ elif page == "🔍 房源筛选与地图":
         end_idx = min(start_idx + items_per_page, len(filtered_df))
         page_df = filtered_df[display_columns].iloc[start_idx:end_idx]
 
-        # 🔴 修复：替换use_container_width为width="stretch"
         st.dataframe(
             page_df,
             column_config={
@@ -1056,11 +1019,11 @@ elif page == "🔍 房源筛选与地图":
             height=600
         )
 
-# 页面3：价格影响因素分析（✅ 完全重构，符合分析要求）
+# 页面3：价格影响因素分析
 elif page == "📈 价格影响因素分析":
     st.markdown('<h1 class="main-header">价格影响因素分析</h1>', unsafe_allow_html=True)
 
-    # 全局数据预处理（只计算一次）
+    # 全局数据预处理
     df['price_per_sqm'] = df['resale_price'] / df['floor_area_sqm']
     df['building_age'] = df['year'] - df['lease_commence_date']
 
@@ -1088,13 +1051,11 @@ elif page == "📈 价格影响因素分析":
     # 采样数据用于散点图（避免50万条数据卡顿）
     sample_df = df.sample(n=10000, random_state=42)
 
-    # ====================== 1. 特征重要性排名 ======================
     st.markdown('<h2 class="sub-header">🏆 特征重要性排名</h2>', unsafe_allow_html=True)
 
-    # ✅ 替换为LightGBM版本（和训练时一致使用gain类型）
-    # 直接从模型获取特征名称（和训练时顺序完全一致）
+    # LightGBM版本
+    # 直接从模型获取特征名称
     feature_names = model.feature_name()
-    # ✅ 关键：使用gain类型获取重要性，和训练时保持一致
     feature_importance_values = model.feature_importance(importance_type='gain')
 
     # 创建特征重要性DataFrame
@@ -1116,7 +1077,6 @@ elif page == "📈 价格影响因素分析":
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
-        # ✅ 新增：前10个特征累计重要性饼图
         top10 = feature_importance.head(10)
         others = pd.DataFrame({
             'feature': ['其他特征'],
@@ -1131,24 +1091,23 @@ elif page == "📈 价格影响因素分析":
         fig.update_traces(textposition='inside', textinfo='percent+label')
         st.plotly_chart(fig, use_container_width=True)
 
-    # ====================== 2. 房屋属性对单价的影响 ======================
     st.markdown('<h2 class="sub-header">🏠 房屋属性对单价的影响</h2>', unsafe_allow_html=True)
 
-    # 2.1 房屋面积 vs 单价（散点图+回归线）
+    # 2.1 房屋面积 vs 单价
     st.markdown('<h3 class="sub-header">2.1 房屋面积 vs 单价</h3>', unsafe_allow_html=True)
     fig = px.scatter(sample_df, x='floor_area_sqm', y='price_per_sqm',
                      title='房屋面积与单价的关系（采样10000条数据）',
                      labels={'floor_area_sqm': '房屋面积（㎡）', 'price_per_sqm': '单价（新元/㎡）'},
                      opacity=0.3,
-                     trendline='ols',  # 添加回归线
+                     trendline='ols', 
                      trendline_color_override='#e74c3c')
     fig.update_layout(height=500)
     st.plotly_chart(fig, use_container_width=True)
 
-    # 2.2 剩余租约 vs 单价（✅ 修复辛普森悖论，按区域类型着色，兼容所有Plotly版本）
+    # 2.2 剩余租约 vs 单价
     st.markdown('<h3 class="sub-header">2.2 剩余租约 vs 单价</h3>', unsafe_allow_html=True)
 
-    # 新加坡HDB官方2026年最新成熟区/非成熟区分类（与政府口径完全一致）
+    # 新加坡HDB官方2026年最新成熟区/非成熟区分类
     mature_towns = [
         'ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT MERAH', 'BUKIT TIMAH',
         'CENTRAL AREA', 'CLEMENTI', 'GEYLANG', 'KALLANG/WHAMPOA', 'MARINE PARADE',
@@ -1160,7 +1119,7 @@ elif page == "📈 价格影响因素分析":
         lambda x: '成熟区' if x in mature_towns else '非成熟区'
     )
 
-    # 生成按区域类型着色的散点图（自动为每个类别生成独立趋势线）
+    # 生成按区域类型着色的散点图
     fig = px.scatter(
         sample_df,
         x='remaining_lease_years',
@@ -1174,10 +1133,9 @@ elif page == "📈 价格影响因素分析":
         color='town_type',
         color_discrete_map={'成熟区': '#e74c3c', '非成熟区': '#3498db'},
         opacity=0.3,
-        trendline='ols'  # 自动为每个类别生成OLS回归线
+        trendline='ols' 
     )
 
-    # ✅ 修复：手动设置趋势线颜色（兼容所有Plotly版本）
     for trace in fig.data:
         if trace.name == '成熟区' and 'trendline' in trace.hovertemplate:
             trace.line.color = '#c0392b'  # 成熟区趋势线颜色
@@ -1194,7 +1152,7 @@ elif page == "📈 价格影响因素分析":
     # 显示图表
     st.plotly_chart(fig, use_container_width=True)
 
-    # 2.3 楼层范围 vs 单价（小提琴图）
+    # 2.3 楼层范围 vs 单价
     st.markdown('<h3 class="sub-header">2.3 楼层范围 vs 单价</h3>', unsafe_allow_html=True)
     fig = px.violin(df, x='floor_category', y='price_per_sqm',
                     title='不同楼层的单价分布',
@@ -1202,24 +1160,23 @@ elif page == "📈 价格影响因素分析":
                     color='floor_category',
                     color_discrete_map={'低楼层(1-6层)': '#2ecc71', '中楼层(7-12层)': '#f1c40f',
                                         '高楼层(13层以上)': '#e74c3c'},
-                    box=True,  # 在小提琴内部显示箱线图
-                    points=False)  # 不显示单个点，避免杂乱
+                    box=True, 
+                    points=False)  
     fig.update_layout(height=500, showlegend=False)
     st.plotly_chart(fig, use_container_width=True)
 
-    # 2.4 户型 vs 均价（棒棒糖图）
+    # 2.4 户型 vs 均价
     st.markdown('<h3 class="sub-header">2.4 户型 vs 均价</h3>', unsafe_allow_html=True)
     flat_type_price = df.groupby('flat_type')['price_per_sqm'].mean().sort_values().reset_index()
 
-    # ✅ 棒棒糖图实现
     fig = px.scatter(flat_type_price, x='price_per_sqm', y='flat_type',
                      title='不同户型的平均单价',
                      labels={'price_per_sqm': '平均单价（新元/㎡）', 'flat_type': '户型'},
-                     size=[1] * len(flat_type_price),  # 统一圆点大小
+                     size=[1] * len(flat_type_price),  
                      size_max=15,
                      color_discrete_sequence=['#1f77b4'])
 
-    # 添加水平线（棒棒糖的"杆"）
+    # 添加水平线
     for i, row in flat_type_price.iterrows():
         fig.add_shape(
             type='line',
@@ -1231,10 +1188,9 @@ elif page == "📈 价格影响因素分析":
     fig.update_layout(height=500, showlegend=False)
     st.plotly_chart(fig, use_container_width=True)
 
-    # ====================== 3. 成熟区 vs 非成熟区对比分析 ======================
     st.markdown('<h2 class="sub-header">🌆 成熟区 vs 非成熟区对比分析</h2>', unsafe_allow_html=True)
 
-    # 定义说明（折叠面板）
+    # 定义说明
     with st.expander("📖 成熟区与非成熟区定义说明"):
         st.write("""
         **成熟组屋区**：历史悠久、配套完善、人口密度高的传统镇区
@@ -1246,8 +1202,8 @@ elif page == "📈 价格影响因素分析":
         **其他镇区**：不属于上述两类的区域，如Jurong East、Bishan等
         """)
 
-    # 3.1 平均房价对比（箱线图）
-    st.markdown('<h3 class="sub-header">3.1 平均房价对比</h3>', unsafe_allow_html=True)
+    # 3.1 多维度房价对比
+    st.markdown('<h3 class="sub-header">3.1 多维度房价对比</h3>', unsafe_allow_html=True)
 
     fig = px.box(df, x='town_type', y='price_per_sqm',
                  title='成熟区与非成熟区房价分布对比',
@@ -1263,7 +1219,7 @@ elif page == "📈 价格影响因素分析":
 
     # 显示平均值点
     fig.update_traces(
-        boxmean=True,  # 显示平均值
+        boxmean=True,  
         width=0.6
     )
 
@@ -1277,18 +1233,17 @@ elif page == "📈 价格影响因素分析":
                   labels={'price_per_sqm': '平均单价（新元/㎡）', 'year': '年份', 'town_type': '镇区类型'},
                   color_discrete_map={'成熟区': '#e74c3c', '非成熟区': '#3498db', '其他': '#95a5a6'})
 
-    # ✅ 新增：和前面两个图完全一致的x轴配置
     fig.update_layout(
         height=500,
         xaxis=dict(
-            tickmode='linear',  # 线性刻度模式
-            dtick=1,  # 每隔1年显示一个刻度
-            range=[trend_df['year'].min() - 0.5, trend_df['year'].max() + 0.5]  # 左右留边距，避免首尾点被截断
+            tickmode='linear',  
+            dtick=1,  
+            range=[trend_df['year'].min() - 0.5, trend_df['year'].max() + 0.5]  
         )
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # 3.3 主流户型分布对比（热力图）
+    # 3.3 主流户型分布对比
     st.markdown('<h3 class="sub-header">3.3 主流户型分布对比</h3>', unsafe_allow_html=True)
     flat_dist = df.groupby(['town_type', 'flat_type']).size().reset_index(name='count')
     flat_dist['percentage'] = flat_dist.groupby('town_type')['count'].transform(lambda x: x / x.sum() * 100)
@@ -1303,10 +1258,9 @@ elif page == "📈 价格影响因素分析":
                     labels=dict(x='户型', y='镇区类型', color='占比(%)'),
                     color_continuous_scale='Blues')
     fig.update_layout(height=400)
-    fig.update_traces(texttemplate='%{z:.1f}%', textfont_size=12)  # 显示数值
+    fig.update_traces(texttemplate='%{z:.1f}%', textfont_size=12)  
     st.plotly_chart(fig, use_container_width=True)
 
-    # ====================== 4. 配套设施对价格的影响 ======================
     st.markdown('<h2 class="sub-header">🛍️ 配套设施对价格的影响</h2>', unsafe_allow_html=True)
 
     # 4.1 地铁站距离对房价的影响
@@ -1362,7 +1316,6 @@ elif page == "📈 价格影响因素分析":
     fig.update_layout(height=400)
     st.plotly_chart(fig, use_container_width=True)
 
-    # ✅ 新增：商场溢价分析（和地铁、小学格式统一）
     mall_500m_price = df[df['nearest_mall_dist_m'] <= 500]['price_per_sqm'].mean()
     mall_far_price = df[df['nearest_mall_dist_m'] > 1000]['price_per_sqm'].mean()
     mall_premium = (mall_500m_price - mall_far_price) / mall_far_price * 100
@@ -1431,7 +1384,7 @@ elif page == "📈 价格影响因素分析":
         fig.update_layout(height=400)
         st.plotly_chart(fig, use_container_width=True)
 
-    # 4.5 区域犯罪率对房价的影响（散点图+回归线）
+    # 4.5 区域犯罪率对房价的影响
     st.markdown('<h3 class="sub-header">4.5 区域犯罪率对房价的影响</h3>', unsafe_allow_html=True)
     fig = px.scatter(sample_df, x='crime_rate_per_1000', y='price_per_sqm',
                      title='区域犯罪率与单价的关系（采样10000条数据）',
@@ -1442,7 +1395,7 @@ elif page == "📈 价格影响因素分析":
     fig.update_layout(height=500)
     st.plotly_chart(fig, use_container_width=True)
 
-    # ✅ 新增：全局相关性热力图
+    # 全局相关性热力图
     st.markdown('<h3 class="sub-header">4.6 关键变量相关性分析</h3>', unsafe_allow_html=True)
 
     # 选择关键数值变量
@@ -1460,11 +1413,10 @@ elif page == "📈 价格影响因素分析":
     fig.update_traces(texttemplate='%{z:.2f}', textfont_size=12)
     st.plotly_chart(fig, use_container_width=True)
 
-# 页面4：房价预测（✅ 优化输入提示+界面整合）
+# 页面4：房价预测
 elif page == "🔮 房价预测":
     st.markdown('<h1 class="main-header">HDB房价智能预测</h1>', unsafe_allow_html=True)
 
-    # ====================== 预定义说明数据 ======================
     # 成熟区/非成熟区定义（与页面3保持一致）
     mature_towns = ['QUEENSTOWN', 'TOA PAYOH', 'ANG MO KIO', 'BUKIT TIMAH', 'CLEMENTI', 'BUKIT MERAH']
     non_mature_towns = ['PUNGGOL', 'SENGKANG', 'WOODLANDS', 'YISHUN', 'SEMBAWANG', 'TAMPINES']
@@ -1506,27 +1458,26 @@ elif page == "🔮 房价预测":
         else:
             town_options.append(f"{town} (其他)")
 
-    # ====================== 输入表单 ======================
     col1, col2 = st.columns(2)
 
     with col1:
-        # ✅ 优化1：市镇选择带成熟区/非成熟区标签
+        # 市镇选择带成熟区/非成熟区标签
         selected_town_label = st.selectbox(
             "选择市镇",
             town_options,
             help="成熟区：历史悠久、配套完善；非成熟区：新兴发展、升值潜力大"
         )
-        # 提取实际市镇名称（去掉括号标签）
+        # 提取实际市镇名称
         town = selected_town_label.split(' (')[0]
 
-        # ✅ 优化2：户型选择加中文说明
+        # 户型选择加中文说明
         flat_type = st.selectbox(
             "选择户型",
             sorted(flat_type_map.keys()),
             help=flat_type_help
         )
 
-        # ✅ 优化3：房屋模型加中文说明
+        # 房屋模型加中文说明
         flat_model = st.selectbox(
             "选择房屋模型",
             sorted(flat_model_map.keys()),
@@ -1572,7 +1523,7 @@ elif page == "🔮 房价预测":
             help="200米以内为步行可达"
         )
 
-    # ✅ 优化4：商业配套选项合并到高级选项中
+    # 商业配套选项合并到高级选项中
     with st.expander("高级选项"):
         st.markdown("### 配套设施参数")
         nearest_mall_dist_m = st.number_input(
@@ -1602,8 +1553,8 @@ elif page == "🔮 房价预测":
         crime_rate_per_1000 = st.number_input(
             "区域犯罪率（每千人）",
             min_value=0.0,
-            max_value=3.0,  # ✅ 修正：最大值从10.0改为3.0，符合实际数据范围
-            value=1.7,  # ✅ 修正：默认值从3.0改为1.7，使用新加坡最新平均值
+            max_value=3.0,  
+            value=1.7,  
             help="新加坡全国平均犯罪率约为1.72每千人"
         )
 
@@ -1688,7 +1639,6 @@ elif page == "🔮 房价预测":
             livability_score = 1 / (nearest_school_dist_m / 1000 + nearest_park_dist_m / 1000 + 0.1)
             commercial_score = 1 / (nearest_mall_dist_m / 1000 + 0.1)
 
-            # ====================== ✅ 修复1：完整计算所有4个交互项特征 ======================
             area_lease_interaction = floor_area_sqm * remaining_lease_years
             transport_livability_interaction = transport_score * livability_score
             area_transport_interaction = floor_area_sqm * transport_score
@@ -1713,12 +1663,11 @@ elif page == "🔮 房价预测":
             park_distance_inv = 1 / (nearest_park_dist_m + 100)
             mall_distance_inv = 1 / (nearest_mall_dist_m + 100)
 
-            # ====================== ✅ 修复2：完整包含所有模型需要的特征 ======================
             input_data = pd.DataFrame({
                 # 基础特征
                 'floor_area_sqm': [floor_area_sqm],
                 'remaining_lease_months': [remaining_lease_months],
-                'remaining_lease_years': [remaining_lease_years],  # 新增：之前缺失的核心特征
+                'remaining_lease_years': [remaining_lease_years],  
                 'nearest_mrt_dist_m': [nearest_mrt_dist_m],
                 'nearest_bus_dist_m': [nearest_bus_dist_m],
                 'nearest_school_dist_m': [nearest_school_dist_m],
@@ -1774,13 +1723,13 @@ elif page == "🔮 房价预测":
                 'park_distance_inv': [park_distance_inv],
                 'mall_distance_inv': [mall_distance_inv],
 
-                # 衍生特征（完整包含所有4个交互项）
+                # 衍生特征
                 'area_lease_interaction': [area_lease_interaction],
                 'transport_livability_interaction': [transport_livability_interaction],
                 'area_transport_interaction': [area_transport_interaction],
-                'mrt_500m_area_interaction': [mrt_500m_area_interaction],  # 新增
-                'mrt_1000m_area_interaction': [mrt_1000m_area_interaction],  # 新增
-                'mall_500m_area_interaction': [mall_500m_area_interaction],  # 新增
+                'mrt_500m_area_interaction': [mrt_500m_area_interaction],  
+                'mrt_1000m_area_interaction': [mrt_1000m_area_interaction],  
+                'mall_500m_area_interaction': [mall_500m_area_interaction],  
                 'mall_1000m_area_interaction': [mall_1000m_area_interaction],
                 'area_commercial_interaction': [area_commercial_interaction],
                 'transport_commercial_interaction': [transport_commercial_interaction],
@@ -1794,9 +1743,8 @@ elif page == "🔮 房价预测":
                 'commercial_diff_from_town_avg': [commercial_diff_from_town_avg]
             })
 
-            # ====================== ✅ 终极防护：永远不会再报KeyError ======================
             model_features = model.feature_name()  # LightGBM获取特征名称的方法
-            # 自动对齐：只保留模型需要的特征，缺失的自动补0，多余的自动忽略
+            # 自动对齐
             input_data = input_data.reindex(columns=model_features, fill_value=0)
 
             # 预测
@@ -1815,7 +1763,6 @@ elif page == "🔮 房价预测":
                 st.metric("预测每平方米价格", f"${price_per_sqm:,.0f}")
 
             with col3:
-                # ✅ 基于模型中位数误差的科学双区间
                 # 核心合理区间：±0.6倍总价中位数误差 | 总宽度≈5.1万 | 置信度≈50%
                 median_total_error = 477.11 * floor_area_sqm
                 core_margin = median_total_error * 0.6
@@ -1834,7 +1781,6 @@ elif page == "🔮 房价预测":
                     help=f"安全参考区间：${safe_lower:,.0f} - ${safe_upper:,.0f}\n70%的房源会落在安全区间内"
                 )
 
-            # ✅ 新增：实用购房决策提示
             if predicted_price < core_lower * 0.95:
                 st.success("✅ 该房源价格明显低于市场预期，属于捡漏好房，建议优先考虑")
             elif predicted_price > safe_upper * 1.05:
@@ -1842,14 +1788,6 @@ elif page == "🔮 房价预测":
             else:
                 st.info("💡 该房源价格处于合理范围内，可按照核心区间进行议价")
 
-            # 商业配套影响分析
-            # st.info(f"""
-            # 🛒 商业配套影响分析：
-            # - 距离商场 {nearest_mall_dist_m} 米，属于 {'步行可达(500米内)' if nearest_mall_dist_m <= 500 else '骑行可达(1000米内)' if nearest_mall_dist_m <= 1000 else '驾车可达(2000米内)'}
-            # - 该距离的房源平均溢价：${35858 if nearest_mall_dist_m <= 500 else 18000 if nearest_mall_dist_m <= 1000 else 5000 if nearest_mall_dist_m <= 2000 else 0:,} 新元
-            # """)
-
-            # 模型性能说明（已更新为最新优化版模型的指标）
             st.info(f"""
             💡 模型性能说明：
             - 测试集R²得分：0.8789（能解释87.89%的房价变化）
@@ -1857,11 +1795,10 @@ elif page == "🔮 房价预测":
             - 每平方米中位数误差：$477.11/㎡
             """)
 
-# 页面5：购房策略与保值分析（✅ 专业决策版，缩进已修复）
+# 页面5：购房策略与保值分析
 elif page == "💡 购房策略":
     st.markdown('<h1 class="main-header">购房策略与保值分析</h1>', unsafe_allow_html=True)
 
-    # ====================== 1. 智能预算匹配系统 ======================
     st.markdown('<h2 class="sub-header">💰 智能预算匹配</h2>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
@@ -1947,20 +1884,17 @@ elif page == "💡 购房策略":
 
         st.success(f"✅ 在你的预算 ${budget:,.0f} 内，为你推荐以下 {len(affordable_df)} 个区域（按{priority}排序）：")
 
-        # ✅ 新增：显示数量控制滑块
         display_count = st.slider(
             "显示前N个区域",
             min_value=5,
-            max_value=len(affordable_df),  # 动态最大值，永远不会超过实际推荐数量
-            value=5,  # 默认显示前5个
+            max_value=len(affordable_df),  
+            value=5,  
             step=1
         )
 
-        # ✅ 修改为显示用户选择的数量
         for idx, row in affordable_df.head(display_count).iterrows():
             with st.expander(f"🏆 第{idx + 1}名：{row['town']}（综合得分：{row['score']:.1f}）",
                              expanded=True if idx == 0 else False):
-                # 以下内部代码完全不变（和方案1一样）
                 col1, col2, col3 = st.columns(3)
 
                 with col1:
@@ -2018,10 +1952,9 @@ elif page == "💡 购房策略":
         st.write("3. 降低对楼层和朝向的要求")
         st.write("4. 考虑剩余租约较短的房源")
 
-    # ====================== 2. 区域综合实力排名 ======================
     st.markdown('<h2 class="sub-header">🏙️ 区域综合实力排名</h2>', unsafe_allow_html=True)
 
-    # 计算综合得分（满分100）
+    # 计算综合得分
     town_metrics_df['price_score'] = 100 - (
                 town_metrics_df['avg_price_per_sqm'] / town_metrics_df['avg_price_per_sqm'].max() * 50)
     town_metrics_df['transport_score'] = 100 - (
@@ -2088,7 +2021,6 @@ elif page == "💡 购房策略":
         fig.update_layout(height=450)
         st.plotly_chart(fig, use_container_width=True)
 
-    # ====================== 3. 保值性深度分析 ======================
     st.markdown('<h2 class="sub-header">📈 区域保值性分析</h2>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
@@ -2148,7 +2080,6 @@ elif page == "💡 购房策略":
     - 成熟区涨幅稳定，非成熟区波动较大，但部分新兴区域涨幅惊人
     """)
 
-    # ====================== 4. 分需求购房策略 ======================
     st.markdown('<h2 class="sub-header">🎯 不同需求的购房策略</h2>', unsafe_allow_html=True)
 
     tab1, tab2, tab3 = st.tabs(["刚需自住", "改善型", "投资保值"])
@@ -2220,7 +2151,6 @@ elif page == "💡 购房策略":
         5. 避免剩余租少于50年的房源
         """)
 
-    # ====================== 5. 购房避坑指南 ======================
     st.markdown('<h2 class="sub-header">⚠️ 购房避坑指南</h2>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
@@ -2271,7 +2201,6 @@ elif page == "💡 购房策略":
            - 长期升值潜力大
         """)
 
-    # ====================== 6. 核心总结 ======================
     st.markdown('<h2 class="sub-header">💎 核心购房建议</h2>', unsafe_allow_html=True)
 
     st.success("""
@@ -2289,7 +2218,7 @@ elif page == "💡 购房策略":
     最后记住：没有完美的房子，只有最适合你的房子。在预算范围内，选择能满足你核心需求的房源就是最好的决策。
     """)
 
-# 页脚（更新为最新模型性能）
+# 页脚
 st.sidebar.markdown("---")
 st.sidebar.info("""
 **新加坡HDB房价分析与预测系统**  
