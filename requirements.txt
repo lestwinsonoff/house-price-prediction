@@ -1,14 +1,7 @@
-# ==============================================
-# Streamlit Cloud 2026.6 完美兼容依赖组合
-# 所有版本都经过严格测试，无任何冲突
-# ==============================================
-
-# 核心框架（必须锁定这三个版本，它们是唯一互相兼容的组合）
 streamlit==1.58.0
 streamlit-folium==0.27.2
 folium==0.15.1
 
-# 地图相关依赖
 geopandas==0.14.4
 haversine==2.8.1
 pyproj==3.7.1
@@ -16,30 +9,25 @@ shapely==2.0.6
 branca==0.8.0
 xyzservices==2026.3.0
 
-# 机器学习依赖
 lightgbm==4.6.0
 scikit-learn==1.5.2
 scipy==1.13.1
 joblib==1.4.2
 
-# 可视化依赖
 matplotlib==3.9.2
 plotly==5.18.0
 seaborn==0.13.2
 
-# 数据处理依赖（绝对不要升级到numpy 2.x或pandas 3.x）
 numpy==1.26.4
 pandas==2.2.3
 pyarrow==17.0.0
 pytz==2026.2
 python-dateutil==2.9.0.post0
 
-# 网络与安全依赖
 requests==2.34.2
 certifi==2026.5.20
 urllib3==2.7.0
 
-# 通用工具依赖
 jinja2==3.1.6
 markupsafe==3.0.3
 click==8.4.1
@@ -50,5 +38,4 @@ typing-extensions==4.15.0
 six==1.17.0
 tzdata==2026.2
 
-# 新增：Plotly OLS趋势线必需依赖
 statsmodels==0.14.2
