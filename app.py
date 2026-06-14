@@ -1362,6 +1362,18 @@ elif page == "📈 价格影响因素分析":
     fig.update_layout(height=400)
     st.plotly_chart(fig, use_container_width=True)
 
+    # ✅ 新增：商场溢价分析（和地铁、小学格式统一）
+    mall_500m_price = df[df['nearest_mall_dist_m'] <= 500]['price_per_sqm'].mean()
+    mall_far_price = df[df['nearest_mall_dist_m'] > 1000]['price_per_sqm'].mean()
+    mall_premium = (mall_500m_price - mall_far_price) / mall_far_price * 100
+
+    st.info(f"""
+    🛒 商场距离溢价分析：
+    - 距离商场500米以内的房源平均单价：${mall_500m_price:,.0f}/㎡
+    - 距离商场1000米以上的房源平均单价：${mall_far_price:,.0f}/㎡
+    - 步行可达商场的房源平均溢价：**{mall_premium:.1f}%**
+    """)
+
     # 4.3 小学距离与名校圈溢价
     st.markdown('<h3 class="sub-header">4.3 小学距离与名校圈溢价</h3>', unsafe_allow_html=True)
 
@@ -1842,6 +1854,7 @@ elif page == "🔮 房价预测":
             💡 模型性能说明：
             - 测试集R²得分：0.8789（能解释87.89%的房价变化）
             - 测试集每平方米平均误差：$574.90/㎡
+            - 每平方米中位数误差：$477.11/㎡
             """)
 
 # 页面5：购房策略与保值分析（✅ 专业决策版，缩进已修复）
@@ -2281,5 +2294,5 @@ st.sidebar.markdown("---")
 st.sidebar.info("""
 **新加坡HDB房价分析与预测系统**  
 数据来源：组屋发展局(HDB)、教育部(MOE)、城市重建局(URA)、国家公园委员会(NPARKS)、新加坡警察队、新加坡统计局、陆路交通管理局(LTA)
-模型准确率：R²=0.8789，每平方米平均误差：$574.90/㎡
+模型准确率：R²=0.8789，每平方米平均误差：$574.90/㎡，每平方米中位数误差：$477.11/㎡
 """)
